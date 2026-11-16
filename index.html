@@ -1,0 +1,292 @@
+```html
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>သီပေါ Express - Food & Bike Delivery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet Interactive Map CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;500;600;700;800&family=Padauk:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans Myanmar', 'Padauk', sans-serif;
+            background-color: #E2E8F0;
+            color: #0F172A;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .fade-in {
+            animation: fadeIn 0.2s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .leaflet-container {
+            font-family: 'Noto Sans Myanmar', sans-serif;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex justify-center items-start sm:py-4">
+
+    <!-- Mobile Super-App Shell (Max 480px) -->
+    <div class="w-full max-w-[480px] bg-[#F8FAFC] min-h-screen sm:min-h-[850px] sm:max-h-[900px] sm:rounded-[2.25rem] sm:shadow-2xl sm:border sm:border-slate-200 flex flex-col overflow-hidden relative">
+
+        <!-- ========================================================= -->
+        <!-- 1. FIRST-TIME ACCOUNT REGISTRATION / EDIT PROFILE SCREEN  -->
+        <!-- ========================================================= -->
+        <div id="register-screen" class="flex-1 flex flex-col justify-between bg-white overflow-y-auto fade-in">
+            <div class="bg-gradient-to-br from-[#FF5722] to-[#FF6D00] pt-10 pb-12 px-6 text-center text-white rounded-b-[2.5rem] shadow-md">
+                <div class="w-16 h-16 bg-white/20 backdrop-blur-xs rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3 shadow-inner">
+                    🛵
+                </div>
+                <h1 class="text-2xl font-extrabold tracking-tight">သီပေါ Express</h1>
+                <p class="text-xs text-orange-100 mt-1">သီပေါမြို့တွင်း အစားအသောက်နှင့် ဆိုင်ကယ်ကယ်ရီ</p>
+            </div>
+
+            <form onsubmit="handleRegister(event)" class="flex-1 px-6 pt-6 pb-8 space-y-5 flex flex-col justify-center">
+                <div class="text-center">
+                    <h2 id="reg-title" class="text-lg font-extrabold text-slate-900">အကောင့်အသစ် ဖောက်ရန်</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">ပုံ၊ နာမည်နှင့် ဖုန်းနံပါတ် ထည့်သွင်းပါ</p>
+                </div>
+
+                <!-- Avatar Upload -->
+                <div class="flex flex-col items-center">
+                    <label for="reg-photo" class="cursor-pointer group relative">
+                        <div id="avatar-preview-box" class="w-24 h-24 rounded-full bg-orange-50 border-2 border-dashed border-[#FF5722] flex flex-col items-center justify-center overflow-hidden group-hover:border-[#E64A19] transition shadow-xs">
+                            <svg class="w-8 h-8 text-[#FF5722]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            <span class="text-[11px] font-bold text-[#FF5722] mt-1">ပုံထည့်ရန်</span>
+                        </div>
+                        <span class="absolute bottom-0 right-0 bg-[#FF5722] text-white w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold shadow-md border-2 border-white">
+                            +
+                        </span>
+                    </label>
+                    <input type="file" id="reg-photo" accept="image/*" class="hidden" onchange="previewProfilePhoto(event)">
+                </div>
+
+                <div>
+                    <label for="reg-name" class="block text-xs font-bold text-slate-700 mb-1.5">နာမည်</label>
+                    <input type="text" id="reg-name" required placeholder="ဥပမာ - စိုင်းစိုင်း / မနန်း"
+                        class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#FF5722] focus:ring-2 focus:ring-orange-500/20 outline-none transition">
+                </div>
+
+                <div>
+                    <label for="reg-phone" class="block text-xs font-bold text-slate-700 mb-1.5">ဖုန်းနံပါတ်</label>
+                    <input type="tel" id="reg-phone" required placeholder="09xxxxxxxxx"
+                        class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#FF5722] focus:ring-2 focus:ring-orange-500/20 outline-none transition">
+                </div>
+
+                <button type="submit"
+                    class="w-full py-3.5 px-5 bg-gradient-to-r from-[#FF5722] to-[#FF6D00] hover:opacity-95 active:scale-[0.99] text-white font-extrabold rounded-2xl shadow-lg shadow-orange-500/25 transition text-sm">
+                    အကောင့်ဖောက်ပြီး အသုံးပြုမည်
+                </button>
+            </form>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 2. MAIN CUSTOMER SUPER-APP SHELL                          -->
+        <!-- ========================================================= -->
+        <div id="main-app-shell" class="hidden flex-1 flex flex-col overflow-hidden">
+
+            <div id="main-scroll-area" class="flex-1 overflow-y-auto no-scrollbar pb-24">
+
+                <!-- ------------------------------------------------------- -->
+                <!-- TAB 1: HOME SCREEN                                      -->
+                <!-- ------------------------------------------------------- -->
+                <div id="view-home" class="fade-in">
+                    <!-- Orange Header -->
+                    <div class="bg-gradient-to-b from-[#FF5722] to-[#FF6D00] px-5 pt-4 pb-12 text-white relative">
+                        <div class="flex items-center justify-between gap-2">
+                            <!-- User Profile Info (Clickable to edit) -->
+                            <button onclick="openEditProfile()" class="flex items-center gap-3 text-left group">
+                                <img id="home-user-avatar" src="" alt="User" class="w-11 h-11 rounded-full object-cover border-2 border-white bg-orange-100 shadow-xs group-hover:scale-105 transition">
+                                <div>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-[10px] bg-white/25 px-2 py-0.5 rounded-full font-bold">📍 သီပေါမြို့</span>
+                                    </div>
+                                    <h1 id="home-user-name" class="text-base font-extrabold tracking-tight mt-0.5 truncate max-w-[180px]">သီပေါ Express</h1>
+                                </div>
+                            </button>
+
+                            <!-- Discreet Admin Button -->
+                            <button onclick="openPinModal()"
+                                class="px-3 py-1.5 rounded-xl bg-black/20 hover:bg-black/30 active:scale-95 text-white text-xs font-bold flex items-center gap-1 transition border border-white/20 shrink-0">
+                                <span>🔒</span>
+                                <span>Admin</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Floating Quick Action Search Bar -->
+                    <div class="px-5 -mt-6 relative z-10">
+                        <button onclick="openService('food')"
+                            class="w-full bg-white rounded-2xl shadow-md shadow-slate-900/5 border border-slate-100 px-4 py-3.5 flex items-center gap-3 text-left hover:border-orange-300 transition active:scale-[0.99]">
+                            <svg class="w-5 h-5 text-[#FF5722] shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 103.5 10.5a7.5 7.5 0 0013.15 6.15z"/>
+                            </svg>
+                            <span class="text-sm text-slate-400 font-medium truncate">ဘာမှာမလဲ / ဘယ်သွားမလဲ...</span>
+                        </button>
+                    </div>
+
+                    <!-- Main Service Grid (Food, ဆိုင်ကယ်ကယ်ရီ, Map) -->
+                    <div class="px-5 pt-6">
+                        <div class="grid grid-cols-3 gap-3.5">
+                            <!-- Food -->
+                            <button onclick="openService('food')" class="flex flex-col items-center group">
+                                <div class="w-full aspect-square max-w-[96px] rounded-3xl bg-orange-100/90 group-hover:bg-orange-200/80 border border-orange-200 flex items-center justify-center shadow-2xs transition group-active:scale-95">
+                                    <span class="text-4xl">🍜</span>
+                                </div>
+                                <span class="text-xs font-extrabold text-slate-800 mt-2">Food</span>
+                                <span class="text-[10px] text-slate-500">အစားအသောက်</span>
+                            </button>
+
+                            <!-- ဆိုင်ကယ်ကယ်ရီ -->
+                            <button onclick="openService('bike')" class="flex flex-col items-center group">
+                                <div class="w-full aspect-square max-w-[96px] rounded-3xl bg-amber-100/90 group-hover:bg-amber-200/80 border border-amber-200 flex items-center justify-center shadow-2xs transition group-active:scale-95">
+                                    <span class="text-4xl">🏍️</span>
+                                </div>
+                                <span class="text-xs font-extrabold text-slate-800 mt-2">ဆိုင်ကယ်ကယ်ရီ</span>
+                                <span class="text-[10px] text-slate-500">အမြန်စီးနင်းရန်</span>
+                            </button>
+
+                            <!-- Map -->
+                            <button onclick="switchBottomTab('map')" class="flex flex-col items-center group">
+                                <div class="w-full aspect-square max-w-[96px] rounded-3xl bg-orange-50 group-hover:bg-orange-100 border border-orange-200 flex items-center justify-center shadow-2xs transition group-active:scale-95">
+                                    <span class="text-4xl">🗺️</span>
+                                </div>
+                                <span class="text-xs font-extrabold text-slate-800 mt-2">Map</span>
+                                <span class="text-[10px] text-slate-500">မြေပုံကြည့်ရန်</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Active Order Banner (Shown if user has an ongoing order) -->
+                    <div id="home-active-order-wrap" class="px-5 pt-5 hidden">
+                        <!-- Rendered dynamically -->
+                    </div>
+
+                    <!-- Quick Info Strip -->
+                    <div class="px-5 pt-5">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+                                <div>
+                                    <p class="text-[10px] text-slate-400 font-bold">ပို့ဆောင်ခနှုန်းထား</p>
+                                    <p class="text-xs font-extrabold text-slate-800 mt-0.5">၁,၀၀၀ ကျပ် မှစ၍</p>
+                                </div>
+                                <div class="w-8 h-8 rounded-xl bg-orange-100 text-[#FF5722] flex items-center justify-center text-sm font-bold">
+                                    💵
+                                </div>
+                            </div>
+
+                            <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+                                <div>
+                                    <p class="text-[10px] text-slate-400 font-bold">ဝန်ဆောင်မှုအချိန်</p>
+                                    <p class="text-xs font-extrabold text-slate-800 mt-0.5">မနက် ၆ - ည ၉</p>
+                                </div>
+                                <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-bold">
+                                    ⏰
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hsipaw Promo Banner -->
+                    <div class="px-5 pt-5 space-y-3.5">
+                        <div onclick="openService('food')" class="cursor-pointer bg-gradient-to-r from-[#FF5722] to-[#FF6D00] rounded-2xl p-4 text-white shadow-sm flex items-center justify-between relative overflow-hidden active:scale-[0.99] transition">
+                            <div class="space-y-1 max-w-[72%]">
+                                <span class="inline-block bg-white/25 text-[10px] font-bold px-2 py-0.5 rounded-md">သီပေါမြို့တွင်း</span>
+                                <h3 class="text-sm font-extrabold leading-snug">သီပေါမြို့တွင်း အမြန်ပို့ဆောင်ရေးနှင့် ကယ်ရီဝန်ဆောင်မှု</h3>
+                                <p class="text-[11px] text-orange-100">ကြိုက်ရာဆိုင်မှ ဝယ်ပို့ပေးခြင်းနှင့် လိုရာခရီး ပို့ဆောင်ပေးသည် →</p>
+                            </div>
+                            <div class="text-5xl select-none">🛵</div>
+                        </div>
+
+                        <!-- Direct Call Support Card -->
+                        <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-11 h-11 rounded-2xl bg-orange-100 text-[#FF5722] flex items-center justify-center text-xl shrink-0">
+                                    📞
+                                </div>
+                                <div>
+                                    <h3 class="text-xs font-extrabold text-slate-900">ဖုန်းဖြင့် တိုက်ရိုက်ဆက်သွယ်ရန်</h3>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">အရေးပေါ်မှာယူလိုပါက ဖုန်းခေါ်နိုင်ပါသည်</p>
+                                </div>
+                            </div>
+                            <a href="tel:09790001122"
+                                class="px-3.5 py-2.5 rounded-xl bg-[#FF5722] hover:bg-[#E64A19] text-white text-xs font-bold shrink-0 shadow-2xs active:scale-95 transition">
+                                ဖုန်းခေါ်မည်
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ------------------------------------------------------- -->
+                <!-- SERVICE A: FOOD ORDER SCREEN                            -->
+                <!-- ------------------------------------------------------- -->
+                <div id="view-food" class="hidden fade-in">
+                    <div class="bg-[#FF5722] text-white px-5 py-4 flex items-center gap-3 sticky top-0 z-20 shadow-xs">
+                        <button onclick="switchBottomTab('home')" class="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center font-bold transition">
+                            ←
+                        </button>
+                        <div>
+                            <h1 class="text-base font-extrabold">🍜 Food (အစားအသောက်)</h1>
+                            <p class="text-[11px] text-orange-100">ဝယ်ခိုင်းချင်သည့် ဆိုင်နှင့် စားစရာကို ရေးပါ</p>
+                        </div>
+                    </div>
+
+                    <form onsubmit="submitFoodOrder(event)" class="p-5 space-y-4">
+                        <!-- Step 1 -->
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
+                            <label for="food-items" class="block text-xs font-extrabold text-slate-800">
+                                ၁။ ဝယ်ခိုင်းချင်တာ ရေးပါ
+                            </label>
+                            <textarea id="food-items" rows="3" required
+                                placeholder="ဥပမာ - နန်းတော်ရှမ်းခေါက်ဆွဲဆိုင်က အဆီထုတ် ၂ ပွဲ"
+                                class="w-full rounded-xl border border-slate-300 p-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#FF5722] focus:ring-2 focus:ring-orange-500/20 outline-none transition"></textarea>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
+                            <label for="food-address" class="block text-xs font-extrabold text-slate-800">
+                                ၂။ ပို့ပေးရမည့် လိပ်စာ
+                            </label>
+                            <input type="text" id="food-address" required oninput="updateFoodFeeIfLocated()"
+                                placeholder="ရပ်ကွက် / အိမ်အမှတ် / အနီးနား အမှတ်အသား"
+                                class="w-full rounded-xl border border-slate-300 p-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#FF5722] focus:ring-2 focus:ring-orange-500/20 outline-none transition">
+                        </div>
+
+                        <!-- Step 3: GPS Location & Delivery Fee -->
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-3">
+                            <label class="block text-xs font-extrabold text-slate-800">
+                                ၃။ တည်နေရာ (Location) ထည့်ရန်
+                            </label>
+                            <button type="button" id="food-loc-btn" onclick="captureFoodLocation()"
+                                class="w-full py-3.5 px-4 rounded-xl border-2 border-dashed border-[#FF5722] bg-orange-50 hover:bg-orange-100/80 active:scale-[0.99] text-[#FF5722] font-bold text-sm transition flex items-center justify-center gap-2">
+                                <span>📍</span>
+                                <span>လက်ရှိ Location ထည့်မည်</span>
+                            </button>
+
+                            <div id="food-fee-box" class="hidden rounded-xl bg-emerald-50 border border-emerald-200 p-3.5 space-y-1 fade-in">
+                                <p class="text-[11px] font-bold text-emerald-700">
+                                    ✅ Location ရပါပြီ (<span id="food-coords-text" class="font-mono"></span>)
+                                </p>
+                                <p class="text-sm font-extrabold text-emerald-950">
+                                    ပို့ဆောင်ခ: <span id="food-fee-display" class="text-emerald-700">၁,၀၀၀ ကျပ်</span>
+                                </p>
+                      
